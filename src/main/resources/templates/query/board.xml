@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spring.client.board.dao.BoardDAO">
+	<resultMap type="board" id="boardMap">
+		<id column="b_num" property="boardNumber"/>
+		<result column="b_name" property="boardName"/>
+		<result column="b_title" property="boardTitle"/>
+		<result column="b_content" property="boardContent"/>
+		<result column="b_pwd" property="boardPasswd"/>
+		<result column="b_date" property="boardDate"/>
+		<result column="b_readcnt" property="readcnt"/>
+		<result column="replyCnt" property="replyCnt"/>
+		<result column="b_file" property="boardFile"/>
+<!-- 		<association property="common">
+			<result column="" property="pageNum"/>
+			<result column="" property="amount"/>
+			<result column="" property="search"/>
+			<result column="" property="keyword"/>
+			<result column="" property="startDate"/>
+			<result column="" property="endDate"/>
+		</association>
+ -->	</resultMap>
+	
+<!-- 	<select id="boardList" parameterType="board" resultMap="boardMap">
+		select b_num, b_name, b_title, to_char(b_date,'YYYY-MM-DD') as b_date, readcnt
+		from spring_board
+		order by b_num desc
+	</select>
+ -->	
+	<insert id="boardInsert" parameterType="board">
+		insert into spring_board(b_num, b_name, b_title, b_content, b_pwd, b_file)
+		values(spring_board_seq.nextval, #{boardName}, #{boardTitle}, #{boardContent}, #{boardPasswd}, #{boardFile})
+	</insert>
+
+<!-- 	위와 같은 방법이지만 b_num을 먼저 구한 후 작업하는 방법	
+	<insert id="boardInsert" parameterType="board">
+		<selectKey keyProperty="boardNumber" resultType="int" order="BEFORE">
+			select spring_board_seq.nextval from dual
+		</selectKey>
+		
+		insert into spring_board(b_num, b_name, b_title, b_content, b_pwd)
+		values(#{boardNumber}, #{boardName}, #{boardTitle}, #{boardContent}, #{boardPasswd})
+	</insert>	
+ -->	
+ 
+ 	<select id="boardDetail" parameterType="board" resultMap="boardMap">
+		select b_num, b_name, b_title, b_content, to_char(b_date,'YYYY-MM-DD HH24:MI:SS') as b_date, readcnt, b_file
+		from spring_board
+		where b_num = #{boardNumber}
+ 	</select>
+ 	
+ 	<update id="readCntUpdate" parameterType="board">
+ 		update spring_board
+ 		set readcnt = readcnt + 1
+ 		where b_num = #{boardNumber}
+ 	</update>
+ 	
+<!--  	<update id="boardUpdate" parameterType="board">
+ 		update spring_board
+ 		set b_title = #{boardTitle},
+ 			b_content = #{boardContent},
+ 			b_date = sysdate
+ 			<if test="boardPasswd != ''">
+ 				, b_pwd = #{boardPasswd}
+ 			</if>
+ 		where b_num = #{boardNumber}
+ 	</update>
+ -->
+ 
+  	<update id="boardUpdate" parameterType="board">
+ 		update spring_board
+ 		set b_title = #{boardTitle},
+ 			b_content = #{boardContent},
+ 			b_date = sysdate
+ 			<if test="boardPasswd != ''">
+ 				, b_pwd = #{boardPasswd}
+ 			</if>
+ 			<if test="boardFile != ''">
+ 				, b_file = #{boardFile}
+ 			</if>
+ 		where b_num = #{boardNumber}
+ 	</update>
+ 
+ 
+  	
+ 	<delete id="boardDelete" parameterType="board">
+ 		delete from spring_board
+ 		where b_num = #{boardNumber}
+ 	</delete>
+ 	
+ 	<select id="pwdConfirm" parameterType="board" resultType="int">
+ 		select NVL((
+ 			select 1 from spring_board
+ 			where b_num = #{boardNumber} and b_pwd = #{boardPasswd}
+ 		), 0) as state
+ 		from dual
+ 	</select>
+ 	
+<!--  	<select id="boardList" parameterType="board" resultMap="boardMap">
+ 		select b_num, b_name, b_title, to_char(b_date,'YYY-MM-DD') as b_date, readcnt
+ 		from spring_board
+ 		<where>
+			<include refid="boardSearch"></include>
+ 		</where>
+ 		order by b_num desc
+ 	</select>
+ 	
+ 	<select id="boardListCnt" parameterType="board" resultType="int">
+		select count(*) from spring_board
+ 		<trim prefix=" where (" suffix=")">
+			<include refid="boardSearch"></include>
+ 		</trim>
+ 	</select>
+ --> 	
+ 	
+ 	<sql id="boardSearch">
+		<if test="search=='b_title'">
+			<![CDATA[ b_title like '%' || #{keyword} || '%' ]]>
+		</if>
+		<if test="search=='b_content'">
+			<![CDATA[ b_content like '%' || #{keyword} || '%' ]]>
+		</if>
+		<if test="search=='b_name'">
+			<![CDATA[ b_name like '%' || #{keyword} || '%' ]]>
+		</if>
+ 	</sql>
+ 	
+<!--  	<select id="boardList" parameterType="board" resultMap="boardMap">
+ 		select b_num, b_name, b_title, to_char(b_date, 'YYYY-MM-DD') as b_date, readcnt, b_file,
+ 		(select count(r_num) from spring_reply where b_num = boardList.b_num) as replyCnt
+ 		from spring_board boardList
+ 		<where>
+ 			<include refid="boardSearch"></include>
+ 		</where>
+ 		order by b_num desc
+ 	</select>
+ --> 	
+ 	 
+	<select id="boardListCnt" parameterType="board" resultType="int">
+		select count(*) from spring_board
+ 		<trim prefix=" where (" suffix=")">
+			<include refid="boardSearch"></include>
+ 		</trim>
+ 	</select>
+ 	
+<!--  	힌트 : 개발자가 데이터베이스에 어떤 방식으로 실행해줘야 하는지를 명시하기 때문에 강제성을 부여한다
+ 		구문 : /*+로 시작하고 */로 종료된다. /*+ index_desc(테이블명 인덱스명[기본키 설정시 제약조건명으로 인덱스 자동생성])*/
+ 	
+ 		rownum : SQL이 실행된 결과에 넘버링
+ -->
+ 
+ 	<select id="boardList" parameterType="board" resultMap="boardMap">
+	 	<![CDATA[
+ 			select b_num, b_name, b_title, to_char(b_date, 'YYYY-MM-DD') as b_date, readcnt, b_file,
+ 				(select count(r_num) from spring_reply where b_num = boardList.b_num) as replyCnt
+	 		from (
+	 			select /*+ INDEX_DESC(spring_board spring_board_pk) */
+	 				rownum as rnum, b_num, b_name, b_title, b_date, readcnt, b_file
+	 			from spring_board
+	 			where]]>
+	 			<trim prefix="(" suffix=") AND " prefixOverrides="AND">
+	 				<include refid="boardSearch"></include>
+	 			</trim>
+	 		<![CDATA[ rownum <= #{pageNum} * #{amount}
+	 		) boardList
+	 	where rnum > (#{pageNum} - 1) * #{amount}
+	 	]]>
+ 	</select>
+ 	
+ 	
+ 	
+ 	
+ 	
+ 
+</mapper>

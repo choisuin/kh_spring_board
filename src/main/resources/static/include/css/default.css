@@ -1,0 +1,9 @@
+@charset "UTF-8";
+
+textarea{resize:none;}
+.table-height{min-height: 453px;}
+.required{color: red;}
+
+#item-template{
+	display:none;
+}
